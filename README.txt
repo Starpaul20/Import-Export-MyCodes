@@ -1,6 +1,6 @@
 ## INFORMATION ##
 
-Add Forum Options (1.0 BETA) for MyBB 1.8
+Import/Export MyCodes (1.0 BETA) for MyBB 1.8
 Created by: Starpaul20
 Copyright: ©2015
 License: GPL
