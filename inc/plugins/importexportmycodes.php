@@ -105,7 +105,7 @@ function importexportmycodes_run()
 				$xml = "<?xml version=\"1.0\" encoding=\"{$lang->settings['charset']}\"?".">\n";
 				$xml .= "<mycodes version=\"{$mybb->version_code}\" exported=\"".TIME_NOW."\">\n";
 
-				$query = $db->simple_select("mycode", "*", $where, array('order_by' => 'cid', 'order_dir' => 'ASC'));
+				$query = $db->simple_select("mycode", "title, description, regex, replacement, active, parseorder", $where, array('order_by' => 'title', 'order_dir' => 'ASC'));
 				while($mycode = $db->fetch_array($query))
 				{
 					$xml .= "\t<mycode>\n";
