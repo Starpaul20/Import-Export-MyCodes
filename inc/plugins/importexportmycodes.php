@@ -52,39 +52,180 @@ function importexportmycodes_run()
 
 	if($mybb->input['action'] == "export")
 	{
-		// Log admin action
-		log_admin_action();
-
-		$cidwhere = '';
-		if($mybb->input['cid'])
+		if($mybb->request_method == "post")
 		{
-			$cidwhere = "cid='".$mybb->get_input('cid', MyBB::INPUT_INT)."'";
-		}
-		$xml = "<?xml version=\"1.0\" encoding=\"{$lang->settings['charset']}\"?".">\n";
-		$xml .= "<mycodes version=\"{$mybb->version_code}\" exported=\"".TIME_NOW."\">\n";
+			if(trim($mybb->input['name']) == '')
+			{
+				$errors[] = $lang->error_missing_name;
+			}
 
-		$query = $db->simple_select("mycode", "*", $cidwhere, array('order_by' => 'cid', 'order_dir' => 'ASC'));
+			$exporttype = $mybb->get_input('exporttype', MyBB::INPUT_INT);
+
+			if($exporttype == 3)
+			{
+				if(count($mybb->input['mycode_1_mycodes']) < 1)
+				{
+					$errors[] = $lang->error_no_mycodes_selected;
+				}
+
+				$mycode_checked[3] = "checked=\"checked\"";
+			}
+			else
+			{
+				$mycode_checked[0] = "checked=\"checked\"";
+				$mybb->input['mycode_1_mycodes'] = '';
+			}
+
+			if(!$errors)
+			{
+				$where = '';
+				if($exporttype == 1)
+				{
+					$where = "active='1'";
+				}
+				elseif($exporttype == 2)
+				{
+					$where = "active='0'";
+				}
+				elseif($exporttype == 3)
+				{
+					if(is_array($mybb->input['mycode_1_mycodes']))
+					{
+						$checked = array();
+						foreach($mybb->input['mycode_1_mycodes'] as $cid)
+						{
+							$checked[] = (int)$cid;
+						}
+
+						$mycodes = implode(',', $checked);
+						$where = "cid IN({$mycodes})";
+					}
+				}
+
+				$xml = "<?xml version=\"1.0\" encoding=\"{$lang->settings['charset']}\"?".">\n";
+				$xml .= "<mycodes version=\"{$mybb->version_code}\" exported=\"".TIME_NOW."\">\n";
+
+				$query = $db->simple_select("mycode", "*", $where, array('order_by' => 'cid', 'order_dir' => 'ASC'));
+				while($mycode = $db->fetch_array($query))
+				{
+					$xml .= "\t<mycode>\n";
+					foreach($mycode as $key => $value)
+					{
+						$value = str_replace(']]>', ']]]]><![CDATA[>', $value);
+						$xml .= "\t\t<{$key}><![CDATA[{$value}]]></{$key}>\n";
+					}
+					$xml .= "\t</mycode>\n";
+				}
+
+				$xml .= "</mycodes>";
+				$mybb->input['name'] = urlencode($mybb->input['name']);
+
+				// Log admin action
+				log_admin_action();
+
+				header("Content-disposition: filename=".$mybb->input['name'].".xml");
+				header("Content-Length: ".my_strlen($xml));
+				header("Content-type: unknown/unknown");
+				header("Pragma: no-cache");
+				header("Expires: 0");
+
+				echo $xml;
+				exit;
+			}
+		}
+
+		$sub_tabs['mycode'] = array(
+			'title'	=> $lang->mycode,
+			'link' => "index.php?module=config-mycode",
+			'description' => $lang->mycode_desc
+		);
+
+		$sub_tabs['add_new_mycode'] = array(
+			'title'	=> $lang->add_new_mycode,
+			'link' => "index.php?module=config-mycode&amp;action=add",
+			'description' => $lang->add_new_mycode_desc
+		);
+
+		$page->add_breadcrumb_item($lang->export_mycode);
+		$page->output_header($lang->custom_mycode." - ".$lang->export_mycode);
+		$page->output_nav_tabs($sub_tabs, 'export_mycode');
+
+		$form = new Form("index.php?module=config-mycode&amp;action=export", "post", false, true);
+
+		if($errors)
+		{
+			$page->output_inline_error($errors);
+		}
+		else
+		{
+			$mybb->input['mycode_1_mycodes'] = '';
+			$mybb->input['name'] = 'mycodes';
+			$mycode_checked[0] = "checked=\"checked\"";
+			$mycode_checked[1] = '';
+			$mycode_checked[2] = '';
+			$mycode_checked[3] = '';
+		}
+
+		$form_container = new FormContainer($lang->export_mycode);
+
+		$query = $db->simple_select("mycode", "cid, title", "", array("order_by" => "title", "order_dir" => "asc"));
 		while($mycode = $db->fetch_array($query))
 		{
-			$xml .= "\t<mycode>\n";
-			foreach($mycode as $key => $value)
-			{
-				$value = str_replace(']]>', ']]]]><![CDATA[>', $value);
-				$xml .= "\t\t<{$key}><![CDATA[{$value}]]></{$key}>\n";
-			}
-			$xml .= "\t</mycode>\n";
+			$mycodes[$mycode['cid']] = $mycode['title'];
 		}
 
-		$xml .= "</mycodes>";
+		$type_select = "<script type=\"text/javascript\">
+			function checkAction(id)
+			{
+				var checked = '';
 
-		header("Content-disposition: filename=mycodes.xml");
-		header("Content-Length: ".my_strlen($xml));
-		header("Content-type: unknown/unknown");
-		header("Pragma: no-cache");
-		header("Expires: 0");
+				$('.'+id+'s_check').each(function(e, val)
+				{
+					if($(this).prop('checked') == true)
+					{
+						checked = $(this).val();
+					}
+				});
+				$('.'+id+'s').each(function(e)
+				{
+					$(this).hide();
+				});
+				if($('#'+id+'_'+checked))
+				{
+					$('#'+id+'_'+checked).show();
+				}
+			}
+		</script>
 
-		echo $xml;
-		exit;
+		<dl style=\"margin-top: 0; margin-bottom: 0; width: 100%\">
+			<dt><label style=\"display: block;\"><input type=\"radio\" name=\"exporttype\" value=\"0\" {$mycode_checked[0]} class=\"mycodes_check\" onclick=\"checkAction('mycode');\" style=\"vertical-align: middle;\" /> <strong>{$lang->all_mycodes}</strong></label></dt>
+			<dt><label style=\"display: block;\"><input type=\"radio\" name=\"exporttype\" value=\"1\" {$mycode_checked[1]} class=\"mycodes_check\" onclick=\"checkAction('mycode');\" style=\"vertical-align: middle;\" /> <strong>{$lang->enabled_mycodes}</strong></label></dt>
+			<dt><label style=\"display: block;\"><input type=\"radio\" name=\"exporttype\" value=\"2\" {$mycode_checked[2]} class=\"mycodes_check\" onclick=\"checkAction('mycode');\" style=\"vertical-align: middle;\" /> <strong>{$lang->disabled_mycodes}</strong></label></dt>
+			<dt><label style=\"display: block;\"><input type=\"radio\" name=\"exporttype\" value=\"3\" {$mycode_checked[3]} class=\"mycodes_check\" onclick=\"checkAction('mycode');\" style=\"vertical-align: middle;\" /> <strong>{$lang->select_mycodes}</strong></label></dt>
+			<dd style=\"margin-top: 4px;\" id=\"mycode_3\" class=\"mycodes\">
+				<table cellpadding=\"4\">
+					<tr>
+						<td valign=\"top\"><small>{$lang->mycodes_colon}</small></td>
+						<td>".$form->generate_select_box('mycode_1_mycodes[]', $mycodes, $mybb->input['mycode_1_mycodes'], array('multiple' => true, 'size' => 5))."</td>
+					</tr>
+				</table>
+			</dd>
+		</dl>
+		<script type=\"text/javascript\">
+			checkAction('mycode');
+		</script>";
+
+		$form_container->output_row($lang->export_type." <em>*</em>", '', $type_select);
+		$form_container->output_row($lang->file_name.' <em>*</em>', $lang->file_name_desc, $form->generate_text_box('name', $mybb->input['name'], array('id' => 'name')), 'name');
+
+		$form_container->end();
+
+		$buttons[] = $form->generate_submit_button($lang->export_mycode);
+
+		$form->output_submit_wrapper($buttons);
+		$form->end();
+
+		$page->output_footer();
 	}
 
 	if($mybb->input['action'] == "import")
@@ -191,7 +332,8 @@ function importexportmycodes_tabs(&$tabs)
 
 		$tabs['export_mycode'] = array(
 			'title'	=> $lang->export_mycode,
-			'link' => "index.php?module=config-mycode&amp;action=export"
+			'link' => "index.php?module=config-mycode&amp;action=export",
+			'description' => $lang->export_mycode_desc
 		);
 	}
 }
