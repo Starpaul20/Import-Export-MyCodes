@@ -1,6 +1,6 @@
 ## INFORMATION ##
 
-Import/Export MyCodes (1.0 BETA) for MyBB 1.8
+Import/Export MyCodes (1.0) for MyBB 1.8
 Created by: Starpaul20
 Copyright: ©2015
 License: GPL
@@ -16,3 +16,8 @@ This plugin offers full language support.
 2. Go to Configuration > Plugins
 3. Click "Activate"
 4. Enjoy!
+
+
+## UPDATING ##
+
+Any beta version should be reinstalled.
