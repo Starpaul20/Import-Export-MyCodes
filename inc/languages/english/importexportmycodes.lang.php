@@ -11,6 +11,7 @@ $l['error_missing_file'] = "You did not select a file to import.";
 $l['error_invalid_extension'] = "Invalid file extension. Please upload only XML files.";
 $l['error_missing_name'] = "Please enter a file name for you MyCode export.";
 $l['error_no_mycodes_selected'] = "You did not select any MyCodes to export.";
+$l['error_no_mycodes_to_export'] = "There are no MyCodes to export with the settings you selected.";
 
 $l['success_imported_mycode'] = " The MyCode(s) has been imported successfully.";
 

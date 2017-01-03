@@ -103,6 +103,7 @@ function importexportmycodes_run()
 					}
 				}
 
+				$count = 0;
 				$xml = "<?xml version=\"1.0\" encoding=\"{$lang->settings['charset']}\"?".">\n";
 				$xml .= "<mycodes version=\"{$mybb->version_code}\" exported=\"".TIME_NOW."\">\n";
 
@@ -116,22 +117,31 @@ function importexportmycodes_run()
 						$xml .= "\t\t<{$key}><![CDATA[{$value}]]></{$key}>\n";
 					}
 					$xml .= "\t</mycode>\n";
+					++$count;
 				}
 
 				$xml .= "</mycodes>";
 				$mybb->input['name'] = urlencode($mybb->input['name']);
 
-				// Log admin action
-				log_admin_action();
+				if($count == 0)
+				{
+					flash_message($lang->error_no_mycodes_to_export, 'error');
+					admin_redirect("index.php?module=config-mycode&action=export");
+				}
+				else
+				{
+					// Log admin action
+					log_admin_action();
 
-				header("Content-disposition: filename=".$mybb->input['name'].".xml");
-				header("Content-Length: ".my_strlen($xml));
-				header("Content-type: unknown/unknown");
-				header("Pragma: no-cache");
-				header("Expires: 0");
+					header("Content-disposition: filename=".$mybb->input['name'].".xml");
+					header("Content-Length: ".my_strlen($xml));
+					header("Content-type: unknown/unknown");
+					header("Pragma: no-cache");
+					header("Expires: 0");
 
-				echo $xml;
-				exit;
+					echo $xml;
+					exit;
+				}
 			}
 		}
 
@@ -239,14 +249,13 @@ function importexportmycodes_run()
 			}
 
 			$ext = get_extension(my_strtolower($_FILES['mycodefile']['name']));
-			if(!preg_match("#^(xml)$#i", $ext)) 
+			if(!preg_match("#^(xml)$#i", $ext))
 			{
 				$errors[] = $lang->error_invalid_extension;
 			}
 
 			if(!$errors)
 			{
-
 				require_once MYBB_ROOT."inc/class_xml.php";
 
 				$contents = @file_get_contents($_FILES['mycodefile']['tmp_name']);
