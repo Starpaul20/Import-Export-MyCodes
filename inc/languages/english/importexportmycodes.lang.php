@@ -35,5 +35,3 @@ $l['mycode_file_desc'] = "Select the XML file you wish to import.";
 // Admin Log
 $l['admin_log_config_mycode_import'] = "Imported MyCodes";
 $l['admin_log_config_mycode_export'] = "Exported MyCodes";
-
-?>

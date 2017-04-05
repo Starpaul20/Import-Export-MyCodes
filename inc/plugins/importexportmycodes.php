@@ -356,4 +356,3 @@ function importexportmycodes_adminlog($plugin_array)
 
 	return $plugin_array;
 }
-?>
