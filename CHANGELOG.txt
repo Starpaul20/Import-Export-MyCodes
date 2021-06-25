@@ -1,2 +1,8 @@
+1.1 (June 25th, 2021)
+- Added error message if there are no MyCodes to export
+- Removed PHP closing tags
+- Adding License file
+- Fixed PHP 8.0 errors
+
 1.0 (October 4th, 2015)
 - Initial release
