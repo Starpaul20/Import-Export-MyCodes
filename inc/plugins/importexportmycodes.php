@@ -46,7 +46,7 @@ function importexportmycodes_deactivate()
 // Actually import or export the MyCodes
 function importexportmycodes_run()
 {
-	global $db, $mybb, $lang, $cache, $page, $sub_tabs;
+	global $db, $mybb, $lang, $cache, $page, $sub_tabs, $errors;
 	$lang->load("importexportmycodes", true);
 
 	require_once MYBB_ROOT."inc/functions_upload.php";
@@ -64,17 +64,23 @@ function importexportmycodes_run()
 
 			if($exporttype == 3)
 			{
-				if(count($mybb->input['mycode_1_mycodes']) < 1)
+				if(empty($mybb->input['mycode_1_mycodes']))
 				{
 					$errors[] = $lang->error_no_mycodes_selected;
 				}
 
 				$mycode_checked[3] = "checked=\"checked\"";
+				$mycode_checked[0] = '';
+				$mycode_checked[1] = '';
+				$mycode_checked[2] = '';
 			}
 			else
 			{
 				$mycode_checked[0] = "checked=\"checked\"";
 				$mybb->input['mycode_1_mycodes'] = '';
+				$mycode_checked[1] = '';
+				$mycode_checked[2] = '';
+				$mycode_checked[3] = '';
 			}
 
 			if(!$errors)
@@ -217,7 +223,7 @@ function importexportmycodes_run()
 				<table cellpadding=\"4\">
 					<tr>
 						<td valign=\"top\"><small>{$lang->mycodes_colon}</small></td>
-						<td>".$form->generate_select_box('mycode_1_mycodes[]', $mycodes, $mybb->input['mycode_1_mycodes'], array('multiple' => true, 'size' => 5))."</td>
+						<td>".$form->generate_select_box('mycode_1_mycodes[]', $mycodes, $mybb->get_input('mycode_1_mycodes'), array('multiple' => true, 'size' => 5))."</td>
 					</tr>
 				</table>
 			</dd>
@@ -227,7 +233,7 @@ function importexportmycodes_run()
 		</script>";
 
 		$form_container->output_row($lang->export_type." <em>*</em>", '', $type_select);
-		$form_container->output_row($lang->file_name.' <em>*</em>', $lang->file_name_desc, $form->generate_text_box('name', $mybb->input['name'], array('id' => 'name')), 'name');
+		$form_container->output_row($lang->file_name.' <em>*</em>', $lang->file_name_desc, $form->generate_text_box('name', $mybb->get_input('name'), array('id' => 'name')), 'name');
 
 		$form_container->end();
 
@@ -256,13 +262,11 @@ function importexportmycodes_run()
 
 			if(!$errors)
 			{
-				require_once MYBB_ROOT."inc/class_xml.php";
-
 				$contents = @file_get_contents($_FILES['mycodefile']['tmp_name']);
 				// Delete the temporary file if possible
 				@unlink($_FILES['mycodefile']['tmp_name']);
 
-				$parser = new XMLParser($contents);
+				$parser = create_xml_parser($contents);
 				$parser->collapse_dups = 0;
 				$tree = $parser->get_tree();
 
@@ -332,7 +336,7 @@ function importexportmycodes_tabs(&$tabs)
 	global $lang;
 	$lang->load("importexportmycodes", true);
 
-	if($tabs['add_new_mycode'])
+	if(isset($tabs['add_new_mycode']))
 	{
 		$tabs['import_mycode'] = array(
 			'title'	=> $lang->import_mycode,
